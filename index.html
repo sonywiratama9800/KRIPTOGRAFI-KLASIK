@@ -2,13 +2,15 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kriptografi Klasik Web</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; background: #f4f6f9; }
-        .card { background: white; padding: 20px; border-radius: 8px; max-width: 500px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card { background: white; padding: 20px; border-radius: 8px; max-width: 500px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 0 auto; }
         input, textarea, select, button { width: 100%; margin-top: 10px; padding: 10px; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
-        .result { margin-top: 15px; background: #e9ecef; padding: 10px; font-family: monospace; font-weight: bold; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-dekripsi { background: #28a745; }
+        .result { margin-top: 15px; background: #e9ecef; padding: 10px; font-family: monospace; font-weight: bold; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -21,13 +23,13 @@
         </select>
 
         <label>Pesan:</label>
-        <textarea id="text">KRIPTOGRAFI</textarea>
+        <textarea id="text" rows="3">KRIPTOGRAFI</textarea>
 
         <label id="keyLabel">Shift (Kunci Angka):</label>
         <input type="text" id="key" value="3">
 
         <button onclick="process(true)">Enkripsi</button>
-        <button onclick="process(false)" style="background: #28a745;">Dekripsi</button>
+        <button onclick="process(false)" class="btn-dekripsi">Dekripsi</button>
 
         <div class="result" id="output">Hasil akan muncul di sini...</div>
     </div>
@@ -46,21 +48,45 @@
 
             if (algo === 'caesar') {
                 let shift = parseInt(key) || 0;
-                if (!isEncrypt) shift = (26 - (shift % 26)) % 26;
+                // Normalisasi shift agar selalu dalam rentang 0-25
+                shift = ((shift % 26) + 26) % 26; 
+
                 res = text.replace(/[a-zA-Z]/g, c => {
                     let base = c <= 'Z' ? 65 : 97;
-                    return String.fromCharCode((c.charCodeAt(0) - base + shift) % 26 + base);
+                    let p = c.charCodeAt(0) - base;
+                    let newPos;
+                    
+                    if (isEncrypt) {
+                        // Formula Enkripsi: (P + k) mod 26
+                        newPos = (p + shift) % 26;
+                    } else {
+                        // Formula Dekripsi: (P - k + 26) mod 26
+                        newPos = (p - shift + 26) % 26;
+                    }
+                    return String.fromCharCode(newPos + base);
                 });
             } else {
                 let kIndex = 0;
-                key = key.toUpperCase().replace(/[^A-Z]/g, '');
-                if (!key) return alert('Keyword harus huruf!');
+                // Ambil karakter huruf saja dari kata kunci
+                let cleanKey = key.toUpperCase().replace(/[^A-Z]/g, '');
+                if (!cleanKey) return alert('Keyword harus berisi huruf!');
+
                 res = text.replace(/[a-zA-Z]/g, c => {
                     let base = c <= 'Z' ? 65 : 97;
-                    let kShift = key.charCodeAt(kIndex % key.length) - 65;
-                    if (!isEncrypt) kShift = (26 - kShift) % 26;
-                    kIndex++;
-                    return String.fromCharCode((c.charCodeAt(0) - base + kShift) % 26 + base);
+                    let p = c.charCodeAt(0) - base;
+                    let kShift = cleanKey.charCodeAt(kIndex % cleanKey.length) - 65;
+                    let newPos;
+
+                    if (isEncrypt) {
+                        // Formula Enkripsi: (P_i + K_i) mod 26
+                        newPos = (p + kShift) % 26;
+                    } else {
+                        // Formula Dekripsi: (C_i - K_i + 26) mod 26
+                        newPos = (p - kShift + 26) % 26;
+                    }
+                    
+                    kIndex++; // Increment index keyword untuk karakter alfabet berikutnya
+                    return String.fromCharCode(newPos + base);
                 });
             }
             document.getElementById('output').innerText = res;
